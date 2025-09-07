@@ -12,11 +12,11 @@ const client = new Client({
     ]
 });
 
-// التأكد من وجود مجلد data
+// Ensure the "data" folder exists
 const dataPath = path.join(__dirname, "data");
 if (!fs.existsSync(dataPath)) fs.mkdirSync(dataPath);
 
-// دالة للحصول على إعدادات السيرفر
+// Function to get server settings
 function getServerSettings(guildId) {
     const filePath = path.join(dataPath, `${guildId}.json`);
     if (!fs.existsSync(filePath)) {
@@ -35,26 +35,26 @@ function getServerSettings(guildId) {
     }
 }
 
-// دالة لحفظ الإعدادات
+// Function to save settings
 function saveServerSettings(guildId, settings) {
     const filePath = path.join(dataPath, `${guildId}.json`);
     fs.writeFileSync(filePath, JSON.stringify(settings, null, 4));
 }
 
-// عند جاهزية البوت
+// When the bot is ready
 client.on("ready", () => {
     console.log(`Logged in as ${client.user.tag}`);
 });
 
-// عضو يدخل السيرفر
+// Member joins the server
 client.on("guildMemberAdd", member => {
     const settings = getServerSettings(member.guild.id);
     const channelId = settings.logChannels.memberJoin;
     if (!channelId) return;
 
     const embed = new EmbedBuilder()
-        .setTitle("عضو جديد دخل السيرفر")
-        .setDescription(`${member.user.tag} انضم إلى السيرفر!`)
+        .setTitle("New Member Joined")
+        .setDescription(`${member.user.tag} has joined the server!`)
         .setColor("Green")
         .setTimestamp();
 
@@ -62,15 +62,15 @@ client.on("guildMemberAdd", member => {
     if (channel) channel.send({ embeds: [embed] });
 });
 
-// عضو يخرج من السيرفر
+// Member leaves the server
 client.on("guildMemberRemove", member => {
     const settings = getServerSettings(member.guild.id);
     const channelId = settings.logChannels.memberLeave;
     if (!channelId) return;
 
     const embed = new EmbedBuilder()
-        .setTitle("عضو غادر السيرفر")
-        .setDescription(`${member.user.tag} غادر السيرفر!`)
+        .setTitle("Member Left")
+        .setDescription(`${member.user.tag} has left the server!`)
         .setColor("Red")
         .setTimestamp();
 
@@ -78,7 +78,7 @@ client.on("guildMemberRemove", member => {
     if (channel) channel.send({ embeds: [embed] });
 });
 
-// حذف رسالة
+// Message deleted
 client.on("messageDelete", message => {
     if (message.author.bot) return;
     const settings = getServerSettings(message.guild.id);
@@ -86,8 +86,8 @@ client.on("messageDelete", message => {
     if (!channelId) return;
 
     const embed = new EmbedBuilder()
-        .setTitle("تم حذف رسالة")
-        .setDescription(`**المرسل:** ${message.author.tag}\n**الرسالة:** ${message.content}`)
+        .setTitle("Message Deleted")
+        .setDescription(`**Author:** ${message.author.tag}\n**Message:** ${message.content}`)
         .setColor("Orange")
         .setTimestamp();
 
@@ -95,7 +95,7 @@ client.on("messageDelete", message => {
     if (channel) channel.send({ embeds: [embed] });
 });
 
-// تحديث الإعدادات عبر أمر (Command)
+// Update settings via command
 client.on("messageCreate", message => {
     if (!message.guild || !message.member.permissions.has("Administrator")) return;
     if (!message.content.startsWith("!logsetup")) return;
@@ -103,13 +103,13 @@ client.on("messageCreate", message => {
     const args = message.content.split(" ");
     const type = args[1]; // memberJoin, memberLeave, messageDelete
     const channel = message.mentions.channels.first();
-    if (!type || !channel) return message.reply("استخدم: !logsetup <type> #channel");
+    if (!type || !channel) return message.reply("Usage: !logsetup <type> #channel");
 
     const settings = getServerSettings(message.guild.id);
     settings.logChannels[type] = channel.id;
     saveServerSettings(message.guild.id, settings);
 
-    message.reply(`تم تعيين قناة لوق ${type} إلى ${channel}`);
+    message.reply(`Log channel for ${type} has been set to ${channel}`);
 });
 
 client.login(process.env.TOKEN);
